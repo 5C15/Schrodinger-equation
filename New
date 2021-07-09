@@ -1,0 +1,174 @@
+%matplotlib  inline
+import numpy as np
+import matplotlib.pyplot as plt
+from ipywidgets import interactive,interact
+import ipywidgets as widgets
+import seaborn as sb
+
+def S(a):
+    return a%2
+        
+def fact(a):
+    i = 1
+    c = 0
+    while a >= 1:
+        i = i * a
+        a = a - 1
+        c = c + 1
+    else:
+        c = 1
+    return i
+    a = c
+    i = 1
+
+def P(a,b):
+    return np.floor(fact(a)/fact(a-b))
+
+def C(a,b):
+	return np.floor(P(a,b)/fact(b))
+
+def doublefact(a):
+     if a <= 0:
+        return 1
+     else:
+        return a*doublefact(a-2)
+
+def p0(b):
+    return 2/(a0*b)
+
+def new(a,l):
+	return 2*a+l%2
+
+def B(a,n,l):
+	return (-1)**a*P(n-l-1,a)/fact(a)/P(a+2*l+1,a)
+
+def norm_r_smd(j,k,n,l):
+	return B(j,n,l)*B(k,n,l)*fact(j+k+2*l+2)
+
+def norm_r(j,k,norm_r_sum,n,l):
+	while j <= n-l-1:
+		while k <= n-l-1:
+			norm_r_sum = norm_r_sum + norm_r_smd(j,k,n,l)
+			k += 1
+		k = 0
+		j += 1
+	j = k = 0
+	return norm_r_sum/p0(n)**3
+	norm_r_sum = 0
+
+
+def fg_bdr(l,m):
+    if (m-l%2)%2 == 0:
+        return (m-l%2)/2
+    else:
+        return 1+(m-l%2)//2
+
+def D(a,l):
+	return (-1)**(a//2-1)*doublefact(l-a%2)*doublefact(l+a-1)/fact(a)/doublefact(l-a)/doublefact(l+l%2-1)  
+
+def norm_theta_smd(d,f,g,l,m):
+	return (-1)**d*C(m,d)*D(new(f,l),l)*D(new(g,l),l)*P(new(f,l),m)*P(new(g,l),m)/(2*d+new(f,l)+new(g,l)-2*m+1)
+
+def norm_theta(d,f,g,norm_theta_sum,l,m):
+	d = 0
+	f = g = fg_bdr(l,m)
+	norm_theta_sum = 0   
+	while d <= m:
+		while new(f,l) <= l:
+			while new(g,l) <= l:
+				norm_theta_sum = norm_theta_sum + norm_theta_smd(d,f,g,l,m)
+				g += 1
+			g = fg_bdr(l,m)
+			f += 1
+		f = fg_bdr(l,m)
+		d += 1
+	d = 0
+	return 2*norm_theta_sum
+
+
+
+
+def r_squared_smd(k,rho,n,l):
+    return B(k,n,l)*rho**(k)
+
+def r_summation(k,rho,r_sum,n,l):
+    k = 0
+    r_sum = 0
+    while k <= n-l-1:
+        r_sum = r_sum + r_squared_smd(k,rho,n,l)
+        k += 1
+    return r_sum
+
+def r_squared(rho,n,l):
+    return (rho**(l)*np.exp(-rho/2)*r_summation(k,rho,r_sum,n,l))**2
+
+
+
+def theta_squared_smd(f,theta,l,m):
+	return D(new(f,l),l)*P(new(f,l),m)*np.cos(theta)**(new(f,l)-m)
+
+def theta_summation(f,theta,theta_sum,l,m):
+    f = fg_bdr(l,m)
+    theta_sum = 0
+    while f <= l//2:
+        theta_sum = theta_sum + theta_squared_smd(f,theta,l,m)
+        f += 1
+    return theta_sum
+
+def theta_squared(theta,l,m):
+	return np.sin(theta)**(2*abs(m))*theta_summation(f,theta,theta_sum,l,m)**2
+
+
+def psi_squared_spherical(j,k,d,f,g,rho,theta,n,l,m):
+	return r_squared(rho,n,l)*theta_squared(theta,l,m)/norm_r(j,k,norm_r_sum,n,l)/norm_theta(d,f,g,norm_theta_sum,l,m)/norm_phi
+
+def psi_squared_cartesian(a,c,n,l,m):
+    global rho,theta
+    rho = np.sqrt(a**2+c**2)*p0(n)
+    theta = np.arctan(a/c)
+    return psi_squared_spherical(j,k,d,f,g,rho,theta,n,l,m)
+
+
+def count(x=[]):
+	x+=[1]
+	return(x)
+
+    
+def initialize():
+    ct = count()
+    if ct == [1]:
+        global n,l,m,a,c,j,k,d,norm_r_sum,norm_theta_sum,r_sum,theta_sum,f,g,x,y
+        n,l,m = 1,0,0
+        a = c = j = k = d = norm_r_sum = norm_theta_sum = r_sum = theta_sum = 0
+        f = g = fg_bdr(l,m)
+    norm_phi = 2*np.pi
+    a0 = 5.2917721090380*10**(-11)
+
+def plotting(n,l,m):
+    initialize()
+    bdr = ob*n**bf
+    x = np.linspace(-bdr,bdr,pixels)
+    y = np.linspace(-bdr,bdr,pixels)
+    x,y = np.meshgrid(x,y)
+    if l > n-1:
+        print("l > n-1 :)")
+    elif abs(m) > l:
+        print("|m| > l :p")
+    else:
+        prob = psi_squared_cartesian(x,y,n,l,m)
+        ax = sb.heatmap(np.log(prob),vmin = lb-cf*n,vmax = ub-cf*n,square = True,xticklabels=False, yticklabels=False)
+        plt.title("Wavefunction")
+        ax.invert_yaxis()
+
+
+norm_phi = 2*np.pi
+a0 = 5.2917721090380*10**(-11)
+pixels = 500
+ob = 3*10**(-10)
+bf = 1.5
+cf = 0.75
+ub = 64
+lb = 61
+
+    
+interactive(plotting,n=widgets.IntSlider(value=1,min=1,max=15,step=1),l=widgets.IntSlider(value=0,min=0,max=14,step=1),m=widgets.IntSlider(value=0,min=0,max=14,step=1))
